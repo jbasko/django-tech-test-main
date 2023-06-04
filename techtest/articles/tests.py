@@ -180,3 +180,48 @@ class ArticleViewTestCase(TestCase):
         response = self.client.delete(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Article.objects.count(), 0)
+
+
+class AuthorViewTestCase(TestCase):
+    def test_creates_retrieves_updates_and_deletes_author(self):
+        payload = {
+            "first_name": "John",
+            "last_name": "Doe",
+        }
+        response = self.client.post(reverse("authors-list"), data=json.dumps(payload),  content_type="application/json")
+        self.assertEqual(response.status_code, 201)
+
+        author = response.json()
+
+        response = self.client.get(reverse("author", kwargs={"author_id": author["id"]}))
+        self.assertEqual(response.status_code, 200)
+        self.assertDictEqual(author, response.json())
+
+        response = self.client.put(
+            reverse("author", kwargs={"author_id": author["id"]}),
+            data=json.dumps({"first_name": "Jane"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.get(reverse("author", kwargs={"author_id": author["id"]}))
+        self.assertEqual(response.status_code, 200)
+        self.assertDictEqual({
+            "id": author["id"],
+            "first_name": "Jane",
+            "last_name": "Doe",
+        }, response.json())
+
+        response = self.client.get(reverse("authors-list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+
+        response = self.client.delete(reverse("author", kwargs={"author_id": author["id"]}))
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.get(reverse("author", kwargs={"author_id": author["id"]}))
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.get(reverse("authors-list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 0)

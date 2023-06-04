@@ -3,7 +3,7 @@ from marshmallow import fields
 from marshmallow import Schema
 from marshmallow.decorators import post_load
 
-from techtest.articles.models import Article
+from techtest.articles.models import Article, Author
 from techtest.regions.models import Region
 from techtest.regions.schemas import RegionSchema
 
@@ -37,3 +37,19 @@ class ArticleSchema(Schema):
         if isinstance(regions, list):
             article.regions.set(regions)
         return article
+
+
+class AuthorSchema(Schema):
+    class Meta(object):
+        model = Author
+
+    id = fields.Integer()
+    first_name = fields.String(validate=validate.Length(max=128))
+    last_name = fields.String(validate=validate.Length(max=128))
+
+    @post_load
+    def update_or_create(self, data, *args, **kwargs):
+        author, _ = Author.objects.update_or_create(
+            id=data.pop("id", None), defaults=data,
+        )
+        return author

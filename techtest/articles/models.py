@@ -8,7 +8,7 @@ class Article(models.Model):
         'regions.Region', related_name='articles', blank=True
     )
     author = models.ForeignKey(
-        'Author', related_name='articles', blank=True, null=True,
+        'Author', blank=True, null=True,
         on_delete=models.SET_NULL,
     )
 

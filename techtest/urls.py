@@ -16,7 +16,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from techtest.articles.views import ArticleView, ArticlesListView
+from techtest.articles.views import ArticleView, ArticlesListView, AuthorsListView, AuthorView
 from techtest.regions.views import RegionView, RegionsListView
 
 urlpatterns = [
@@ -25,4 +25,6 @@ urlpatterns = [
     path("articles/<int:article_id>/", ArticleView.as_view(), name="article"),
     path("regions/", RegionsListView.as_view(), name="regions-list"),
     path("regions/<int:region_id>/", RegionView.as_view(), name="region"),
+    path("authors/", AuthorsListView.as_view(), name="authors-list"),
+    path("authors/<int:author_id>/", AuthorView.as_view(), name="author"),
 ]
