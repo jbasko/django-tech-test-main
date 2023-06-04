@@ -8,6 +8,22 @@ from techtest.regions.models import Region
 from techtest.regions.schemas import RegionSchema
 
 
+class AuthorSchema(Schema):
+    class Meta(object):
+        model = Author
+
+    id = fields.Integer()
+    first_name = fields.String(validate=validate.Length(max=128))
+    last_name = fields.String(validate=validate.Length(max=128))
+
+    @post_load
+    def update_or_create(self, data, *args, **kwargs):
+        author, _ = Author.objects.update_or_create(
+            id=data.pop("id", None), defaults=data,
+        )
+        return author
+
+
 class ArticleSchema(Schema):
     class Meta(object):
         model = Article
@@ -15,6 +31,7 @@ class ArticleSchema(Schema):
     id = fields.Integer()
     title = fields.String(validate=validate.Length(max=255))
     content = fields.String()
+    author = fields.Nested(AuthorSchema, allow_none=True)
     regions = fields.Method(
         required=False, serialize="get_regions", deserialize="load_regions"
     )
@@ -39,17 +56,3 @@ class ArticleSchema(Schema):
         return article
 
 
-class AuthorSchema(Schema):
-    class Meta(object):
-        model = Author
-
-    id = fields.Integer()
-    first_name = fields.String(validate=validate.Length(max=128))
-    last_name = fields.String(validate=validate.Length(max=128))
-
-    @post_load
-    def update_or_create(self, data, *args, **kwargs):
-        author, _ = Author.objects.update_or_create(
-            id=data.pop("id", None), defaults=data,
-        )
-        return author

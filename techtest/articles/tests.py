@@ -3,13 +3,14 @@ import json
 from django.test import TestCase
 from django.urls import reverse
 
-from techtest.articles.models import Article
+from techtest.articles.models import Article, Author
 from techtest.regions.models import Region
 
 
 class ArticleListViewTestCase(TestCase):
     def setUp(self):
         self.url = reverse("articles-list")
+        self.author_1 = Author.objects.create(first_name="John", last_name="Doe")
         self.article_1 = Article.objects.create(title="Fake Article 1")
         self.region_1 = Region.objects.create(code="AL", name="Albania")
         self.region_2 = Region.objects.create(code="UK", name="United Kingdom")
@@ -29,6 +30,7 @@ class ArticleListViewTestCase(TestCase):
                     "title": "Fake Article 1",
                     "content": "",
                     "regions": [],
+                    "author": None,
                 },
                 {
                     "id": self.article_2.id,
@@ -46,6 +48,7 @@ class ArticleListViewTestCase(TestCase):
                             "name": "United Kingdom",
                         },
                     ],
+                    "author": None,
                 },
             ],
         )
@@ -80,6 +83,70 @@ class ArticleListViewTestCase(TestCase):
                     },
                     {"id": regions.all()[1].id, "code": "AU", "name": "Austria"},
                 ],
+                "author": None,
+            },
+            response.json(),
+        )
+
+    def test_manages_article_with_author(self):
+        payload = {
+            "title": "Fake Article 4",
+            "content": "This is real",
+            "regions": [],
+            "author": {"id": self.author_1.id},
+        }
+        response = self.client.post(
+            self.url, data=json.dumps(payload), content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 201)
+
+        article = Article.objects.last()
+        self.assertEqual(article.author.id, self.author_1.id)
+
+        response = self.client.get(
+            reverse("article", kwargs={"article_id": article.id}),
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertDictEqual(
+            {
+                "id": article.id,
+                "title": "Fake Article 4",
+                "content": "This is real",
+                "regions": [],
+                "author": {
+                    "id": self.author_1.id,
+                    "first_name": "John",
+                    "last_name": "Doe",
+                },
+            },
+            response.json(),
+        )
+
+        response = self.client.put(
+            reverse("article", kwargs={"article_id": article.id}),
+            data=json.dumps({
+                "title": "Fake Article 4",
+                "content": "This is real",
+                "regions": [],
+                "author": None,
+            }),
+        )
+        self.assertEqual(response.status_code, 200)
+
+        article = Article.objects.last()
+        self.assertIsNone(article.author)
+
+        response = self.client.get(
+            reverse("article", kwargs={"article_id": article.id}),
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertDictEqual(
+            {
+                "id": article.id,
+                "title": "Fake Article 4",
+                "content": "This is real",
+                "regions": [],
+                "author": None,
             },
             response.json(),
         )
@@ -114,6 +181,7 @@ class ArticleViewTestCase(TestCase):
                         "name": "United Kingdom",
                     },
                 ],
+                "author": None,
             },
         )
 
@@ -153,6 +221,7 @@ class ArticleViewTestCase(TestCase):
                         "name": "United States of America",
                     },
                 ],
+                "author": None,
             },
             response.json(),
         )
@@ -172,6 +241,7 @@ class ArticleViewTestCase(TestCase):
                 "title": "Fake Article 1 (Modified)",
                 "content": "To be or not to be here",
                 "regions": [],
+                "author": None,
             },
             response.json(),
         )
